@@ -32,7 +32,6 @@ import Messenger from './pages/Messenger';
 import Setup from './pages/Setup';
 import SetupLogin from './pages/SetupLogin';
 import Welcome from './pages/Welcome';
-import { ThemeDemonstrator } from './themes/ThemeDemonstrator';
 
 export type ConversationRouteParams = RouteParams<{ conversationId?: string }, Record<string, never>>;
 
@@ -42,7 +41,6 @@ export const router = createBrowserRouter(
       <Route path="login" element={<Welcome />} />
       <Route path="setup/login" element={<SetupLogin />} />
       <Route path="setup" element={<Setup />} />
-      <Route path="theme" element={<ThemeDemonstrator />} />
       <Route
         element={
           <AuthProvider>
