@@ -15,22 +15,25 @@
  * License along with this program.  If not, see
  * <https://www.gnu.org/licenses/>.
  */
-import { ConversationView, WebSocketMessageType } from 'jami-web-common';
+import { ConversationInfos, ConversationView, WebSocketMessageType } from 'jami-web-common';
 import { useContext, useEffect, useMemo } from 'react';
 
 import LoadingPage from '../components/Loading';
 import { createOptionalContext } from '../hooks/createOptionalContext';
+import { useConversationDisplayName } from '../hooks/useConversationDisplayName';
 import { useUrlParams } from '../hooks/useUrlParams';
-import { Conversation } from '../models/conversation';
+import { ConversationMember } from '../models/conversation-member';
 import { ConversationRouteParams } from '../router';
-import { useConversationQuery } from '../services/conversationQueries';
+import { useConversationInfosQuery, useMembersQuery } from '../services/conversationQueries';
 import { WithChildren } from '../utils/utils';
 import { useAuthContext } from './AuthProvider';
 import { WebSocketContext } from './WebSocketProvider';
 
 interface IConversationContext {
   conversationId: string;
-  conversation: Conversation;
+  conversationDisplayName: string;
+  conversationInfos: ConversationInfos;
+  members: ConversationMember[];
 }
 
 const optionalConversationContext = createOptionalContext<IConversationContext>('ConversationContext');
@@ -41,13 +44,29 @@ export default ({ children }: WithChildren) => {
   const {
     urlParams: { conversationId },
   } = useUrlParams<ConversationRouteParams>();
-  const { accountId } = useAuthContext();
+  const { accountId, account } = useAuthContext();
   const webSocket = useContext(WebSocketContext);
 
-  const { conversation, isLoading, isError } = useConversationQuery(conversationId!);
+  const conversationInfosQuery = useConversationInfosQuery(conversationId!);
+  const membersQuery = useMembersQuery(conversationId!);
+
+  const isError = useMemo(
+    () => conversationInfosQuery.isError || membersQuery.isError,
+    [conversationInfosQuery.isError, membersQuery.isError]
+  );
+
+  const isLoading = useMemo(
+    () => conversationInfosQuery.isLoading || membersQuery.isLoading,
+    [conversationInfosQuery.isLoading, membersQuery.isLoading]
+  );
+
+  const conversationInfos = conversationInfosQuery.data;
+  const members = membersQuery.data;
+
+  const conversationDisplayName = useConversationDisplayName(account, conversationId, conversationInfos, members);
 
   useEffect(() => {
-    if (!conversation || !conversationId || !webSocket) {
+    if (!conversationInfos || !conversationId || !webSocket) {
       return;
     }
 
@@ -56,18 +75,20 @@ export default ({ children }: WithChildren) => {
     };
 
     webSocket.send(WebSocketMessageType.ConversationView, conversationView);
-  }, [accountId, conversation, conversationId, webSocket]);
+  }, [accountId, conversationInfos, conversationId, webSocket]);
 
   const value = useMemo(() => {
-    if (!conversation || !conversationId) {
+    if (!conversationId || !conversationDisplayName || !conversationInfos || !members) {
       return;
     }
 
     return {
       conversationId,
-      conversation,
+      conversationDisplayName,
+      conversationInfos,
+      members,
     };
-  }, [conversationId, conversation]);
+  }, [conversationId, conversationDisplayName, conversationInfos, members]);
 
   if (isLoading) {
     return <LoadingPage />;

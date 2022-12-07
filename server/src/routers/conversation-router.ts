@@ -21,8 +21,8 @@ import { ParamsDictionary } from 'express-serve-static-core';
 import {
   ContactDetails,
   HttpStatusCode,
-  IConversation,
   IConversationMember,
+  IConversationSummary,
   NewConversationRequestBody,
   NewMessageRequestBody,
 } from 'jami-web-common';
@@ -33,11 +33,11 @@ import { authenticateToken } from '../middleware/auth.js';
 
 const jamid = Container.get(Jamid);
 
-async function createConversationResponseObject(
+async function createConversationSummary(
   accountId: string,
   accountUri: string,
   conversationId: string
-): Promise<IConversation | undefined> {
+): Promise<IConversationSummary | undefined> {
   const infos = jamid.getConversationInfos(accountId, conversationId);
   if (Object.keys(infos).length === 0) {
     return undefined;
@@ -45,7 +45,7 @@ async function createConversationResponseObject(
 
   const members = jamid.getConversationMembers(accountId, conversationId);
 
-  const namedMembers: IConversationMember[] = [];
+  const membersNames = [];
   for (const member of members) {
     // Exclude current user from returned conversation members
     if (member.uri === accountUri) {
@@ -54,24 +54,17 @@ async function createConversationResponseObject(
 
     // Add usernames for conversation members
     const { username } = await jamid.lookupAddress(member.uri, accountId);
-    namedMembers.push({
-      role: member.role,
-      contact: {
-        uri: member.uri,
-        registeredName: username,
-      },
-    });
+    membersNames.push(username ?? member.uri);
   }
 
-  // TODO: Check if messages actually need to be added to response
-  // (does the client really need it for all endpoints, or just the /conversations/conversationId/messages endpoint?)
-  const messages = await jamid.getConversationMessages(accountId, conversationId);
+  const lastMessage = (await jamid.getConversationMessages(accountId, conversationId, '', 1))[0];
 
   return {
     id: conversationId,
-    members: namedMembers,
-    messages: messages,
-    infos: infos,
+    avatar: infos.avatar,
+    title: infos.title,
+    membersNames,
+    lastMessage,
   };
 }
 
@@ -89,13 +82,13 @@ conversationRouter.get(
 
     const conversationIds = jamid.getConversationIds(accountId);
 
-    const conversations = [];
+    const conversationsSummaries = [];
     for (const conversationId of conversationIds) {
-      const conversation = await createConversationResponseObject(accountId, accountUri, conversationId);
-      conversations.push(conversation);
+      const conversationSummary = await createConversationSummary(accountId, accountUri, conversationId);
+      conversationsSummaries.push(conversationSummary);
     }
 
-    res.send(conversations);
+    res.send(conversationsSummaries);
   })
 );
 
@@ -125,10 +118,6 @@ conversationRouter.post(
   }
 );
 
-// TODO: Check if we actually need this endpoint to return messages.
-// At the moment, /conversations does a lot of work returning all the conversations with the same
-// level of detail as this, and /conversations/messages returns just the messages. Check whether or not
-// this is what we want, and if so, if we can be more economical with client requests.
 conversationRouter.get(
   '/:conversationId',
   asyncHandler(async (req, res) => {
@@ -138,13 +127,67 @@ conversationRouter.get(
     // Retrieve the URI of the current account (Account.username actually stores the URI rather than the username)
     const accountUri = jamid.getAccountDetails(accountId)['Account.username'];
 
-    const conversation = await createConversationResponseObject(accountId, accountUri, conversationId);
-    if (conversation === undefined) {
+    const conversationSummary = await createConversationSummary(accountId, accountUri, conversationId);
+    if (conversationSummary === undefined) {
       res.status(HttpStatusCode.NotFound).send('No such conversation found');
       return;
     }
 
-    res.send(conversation);
+    res.send(conversationSummary);
+  })
+);
+
+conversationRouter.get(
+  '/:conversationId/infos',
+  asyncHandler(async (req, res) => {
+    const accountId = res.locals.accountId;
+    const conversationId = req.params.conversationId;
+
+    const infos = jamid.getConversationInfos(accountId, conversationId);
+    if (Object.keys(infos).length === 0) {
+      res.status(HttpStatusCode.NotFound).send('No such conversation found');
+    }
+
+    res.send(infos);
+  })
+);
+
+conversationRouter.get(
+  '/:conversationId/members',
+  asyncHandler(async (req, res) => {
+    const accountId = res.locals.accountId;
+    const conversationId = req.params.conversationId;
+
+    // Retrieve the URI of the current account (Account.username actually stores the URI rather than the username)
+    const accountUri = jamid.getAccountDetails(accountId)['Account.username'];
+
+    const infos = jamid.getConversationInfos(accountId, conversationId);
+    if (Object.keys(infos).length === 0) {
+      res.status(HttpStatusCode.NotFound).send('No such conversation found');
+      return;
+    }
+
+    const members = jamid.getConversationMembers(accountId, conversationId);
+
+    const namedMembers: IConversationMember[] = [];
+    for (const member of members) {
+      // Exclude current user from returned conversation members
+      if (member.uri === accountUri) {
+        continue;
+      }
+
+      // Add usernames for conversation members
+      const { username } = await jamid.lookupAddress(member.uri, accountId);
+      namedMembers.push({
+        role: member.role,
+        contact: {
+          uri: member.uri,
+          registeredName: username,
+        },
+      });
+    }
+
+    res.send(namedMembers);
   })
 );
 
@@ -187,3 +230,8 @@ conversationRouter.post(
     res.sendStatus(HttpStatusCode.NoContent);
   }
 );
+
+conversationRouter.delete('/:conversationId', (req, res) => {
+  jamid.removeConversation(res.locals.accountId, req.params.conversationId);
+  res.sendStatus(HttpStatusCode.NoContent);
+});

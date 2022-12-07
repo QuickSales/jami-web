@@ -15,7 +15,7 @@
  * License along with this program.  If not, see
  * <https://www.gnu.org/licenses/>.
  */
-import { CallBegin, WebSocketMessageType } from 'jami-web-common';
+import { CallBegin, ConversationInfos, WebSocketMessageType } from 'jami-web-common';
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
@@ -23,9 +23,9 @@ import { useNavigate } from 'react-router-dom';
 import { AlertSnackbar } from '../components/AlertSnackbar';
 import { RemoteVideoOverlay } from '../components/VideoOverlay';
 import { useUrlParams } from '../hooks/useUrlParams';
-import { Conversation } from '../models/conversation';
+import { ConversationMember } from '../models/conversation-member';
 import { ConversationRouteParams } from '../router';
-import { useConversationQuery } from '../services/conversationQueries';
+import { useConversationInfosQuery, useMembersQuery } from '../services/conversationQueries';
 import { SetState, WithChildren } from '../utils/utils';
 import CallProvider, { CallRole } from './CallProvider';
 import WebRtcProvider from './WebRtcProvider';
@@ -39,16 +39,16 @@ export type CallData = {
 
 type ICallManagerContext = {
   callData: CallData | undefined;
-  callConversation: Conversation | undefined;
-
+  callConversationInfos: ConversationInfos | undefined;
+  callMembers: ConversationMember[] | undefined;
   startCall: SetState<CallData | undefined>;
   exitCall: () => void;
 };
 
 const defaultCallManagerContext: ICallManagerContext = {
   callData: undefined,
-  callConversation: undefined,
-
+  callConversationInfos: undefined,
+  callMembers: undefined,
   startCall: () => {},
   exitCall: () => {},
 };
@@ -60,7 +60,8 @@ export default ({ children }: WithChildren) => {
   const [callData, setCallData] = useState<CallData>();
   const webSocket = useContext(WebSocketContext);
   const navigate = useNavigate();
-  const { conversation } = useConversationQuery(callData?.conversationId);
+  const { data: conversationInfos } = useConversationInfosQuery(callData?.conversationId);
+  const { data: members } = useMembersQuery(callData?.conversationId);
   const { urlParams } = useUrlParams<ConversationRouteParams>();
   const [missedCallConversationId, setMissedCallConversationId] = useState<string>();
   const { t } = useTranslation();
@@ -108,10 +109,11 @@ export default ({ children }: WithChildren) => {
     () => ({
       startCall,
       callData,
-      callConversation: conversation,
+      callConversationInfos: conversationInfos,
+      callMembers: members,
       exitCall,
     }),
-    [startCall, callData, conversation, exitCall]
+    [startCall, callData, conversationInfos, members, exitCall]
   );
 
   return (

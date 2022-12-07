@@ -31,7 +31,7 @@ import { FileHandler } from '../utils/files';
 
 const ChatInterface = () => {
   const webSocket = useContext(WebSocketContext);
-  const { conversationId, conversation } = useConversationContext();
+  const { conversationId } = useConversationContext();
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(false);
@@ -105,8 +105,6 @@ const ChatInterface = () => {
     return <div>Error loading {conversationId}</div>;
   }
 
-  const members = conversation.members;
-
   return (
     <Stack flex={1} overflow="hidden" {...getRootProps()} paddingBottom="16px">
       {isDragActive && (
@@ -123,14 +121,14 @@ const ChatInterface = () => {
         />
       )}
       <input {...getInputProps()} />
-      <MessageList members={members} messages={messages} />
+      <MessageList messages={messages} />
       <Divider
         sx={{
           margin: '30px 16px 0px 16px',
           borderTop: '1px solid #E5E5E5',
         }}
       />
-      <SendMessageForm members={members} onSend={sendMessage} openFilePicker={openFilePicker} />
+      <SendMessageForm onSend={sendMessage} openFilePicker={openFilePicker} />
       {fileHandlers.length > 0 && <FilePreviewsList fileHandlers={fileHandlers} removeFile={removeFile} />}
     </Stack>
   );

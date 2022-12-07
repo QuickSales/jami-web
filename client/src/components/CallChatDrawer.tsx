@@ -44,10 +44,7 @@ export default () => {
 
 const CallChatDrawerHeader = () => {
   const { setIsChatShown } = useCallContext();
-  const { conversation } = useConversationContext();
-
-  // TODO: Improve this to support multiple members
-  const contact = conversation.getFirstMember().contact;
+  const { conversationDisplayName } = useConversationContext();
 
   return (
     <Stack direction="row" padding={2} spacing={2} alignItems="center">
@@ -58,7 +55,7 @@ const CallChatDrawerHeader = () => {
       />
       <Stack direction="column">
         <Typography variant="h3" textOverflow="ellipsis">
-          {contact.getDisplayName()}
+          {conversationDisplayName}
         </Typography>
       </Stack>
     </Stack>

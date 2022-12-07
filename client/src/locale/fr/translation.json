@@ -12,7 +12,7 @@
   "conversation_details": "Détails de la conversation",
   "conversation_block": "Bloquer la conversation",
   "conversation_delete": "Supprimer la conversation",
-  "conversation_details_username": "Nom d'utilisateur",
+  "conversation_details_name": "Titre",
   "conversation_details_identifier": "Identifiant",
   "conversation_details_qr_code": "Code QR",
   "conversation_details_is_swarm": "Est un swarm",

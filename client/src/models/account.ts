@@ -18,7 +18,6 @@
 import { AccountDetails, Devices, IAccount, VolatileDetails } from 'jami-web-common';
 
 import { Contact } from './contact';
-import { Conversation } from './conversation';
 
 export type AccountType = 'RING' | 'SIP';
 
@@ -29,8 +28,6 @@ export class Account implements IAccount {
   defaultModerators: Contact[] = [];
   devices: Devices = {};
   contacts: Contact[] = [];
-
-  private _conversations: Record<string, Conversation> = {};
 
   constructor(id: string, details: AccountDetails, volatileDetails: VolatileDetails) {
     this.id = id;
@@ -78,20 +75,5 @@ export class Account implements IAccount {
 
   getDisplayNameNoFallback() {
     return this.details['Account.displayName'] ?? this.getRegisteredName();
-  }
-
-  get conversations() {
-    return this._conversations;
-  }
-
-  addConversation(conversation: Conversation) {
-    if (conversation.id === undefined) {
-      throw new Error('Conversation ID cannot be undefined');
-    }
-    this._conversations[conversation.id] = conversation;
-  }
-
-  removeConversation(conversationId: string) {
-    delete this.conversations[conversationId];
   }
 }

@@ -35,7 +35,7 @@ import { VideoElementWithSinkId } from '../utils/utils';
 
 export const CallPending = () => {
   const { localStream } = useWebRtcContext();
-  const { conversation } = useConversationContext();
+  const { conversationDisplayName } = useConversationContext();
   const { callRole } = useCallContext();
   const localVideoRef = useRef<VideoElementWithSinkId | null>(null);
 
@@ -99,7 +99,7 @@ export const CallPending = () => {
           />
           <ConversationAvatar
             alt="contact profile picture"
-            displayName={conversation.getDisplayNameNoFallback()}
+            displayName={conversationDisplayName}
             style={{
               width: '100%',
               height: '100%',
@@ -148,8 +148,8 @@ const CallPendingDetails = ({
 export const CallPendingCallerInterface = () => {
   const { callStatus } = useCallContext();
   const { t } = useTranslation();
-  const { conversation } = useConversationContext();
-  const memberName = useMemo(() => conversation.getFirstMember().contact.registeredName, [conversation]);
+  const { members } = useConversationContext();
+  const memberName = useMemo(() => members[0].getDisplayName(), [members]);
 
   let title = t('loading');
 
@@ -182,8 +182,8 @@ export const CallPendingReceiverInterface = () => {
   const { callStatus } = useCallContext();
 
   const { t } = useTranslation();
-  const { conversation } = useConversationContext();
-  const memberName = useMemo(() => conversation.getFirstMember().contact.registeredName, [conversation]);
+  const { members } = useConversationContext();
+  const memberName = useMemo(() => members[0].getDisplayName(), [members]);
 
   let title = t('loading');
 

@@ -16,18 +16,14 @@
  * <https://www.gnu.org/licenses/>.
  */
 import { Divider, Stack, Typography } from '@mui/material';
-import { useContext, useMemo } from 'react';
-import { useTranslation } from 'react-i18next';
+import { useContext } from 'react';
 
-import { useAuthContext } from '../contexts/AuthProvider';
 import { CallManagerContext } from '../contexts/CallManagerProvider';
 import { useCallContext } from '../contexts/CallProvider';
 import { useConversationContext } from '../contexts/ConversationProvider';
 import { useWebRtcContext } from '../contexts/WebRtcProvider';
-import { ConversationMember } from '../models/conversation';
 import CallInterface from '../pages/CallInterface';
 import ChatInterface from '../pages/ChatInterface';
-import { translateEnumeration, TranslateEnumerationOptions } from '../utils/translations';
 import { AddParticipantButton, ShowOptionsMenuButton, StartAudioCallButton, StartVideoCallButton } from './Button';
 
 const ConversationView = () => {
@@ -54,42 +50,14 @@ const ConversationView = () => {
 };
 
 const ConversationHeader = () => {
-  const { account } = useAuthContext();
-  const { conversation, conversationId } = useConversationContext();
+  const { conversationId, conversationDisplayName } = useConversationContext();
   const { startCall } = useContext(CallManagerContext);
-  const { t } = useTranslation();
-
-  const members = conversation.members;
-  const adminTitle = conversation.infos.title as string;
-
-  const title = useMemo(() => {
-    if (adminTitle) {
-      return adminTitle;
-    }
-
-    const options: TranslateEnumerationOptions<ConversationMember> = {
-      elementPartialKey: 'member',
-      getElementValue: (member) => getMemberName(member),
-      translaters: [
-        () =>
-          // The user is chatting with themself
-          t('conversation_title_one', { member0: account?.getDisplayName() }),
-        (interpolations) => t('conversation_title_one', interpolations),
-        (interpolations) => t('conversation_title_two', interpolations),
-        (interpolations) => t('conversation_title_three', interpolations),
-        (interpolations) => t('conversation_title_four', interpolations),
-        (interpolations) => t('conversation_title_more', interpolations),
-      ],
-    };
-
-    return translateEnumeration<ConversationMember>(members, options);
-  }, [account, members, adminTitle, t]);
 
   return (
     <Stack direction="row" padding="16px" overflow="hidden">
       <Stack flex={1} justifyContent="center" whiteSpace="nowrap" overflow="hidden">
         <Typography variant="h3" textOverflow="ellipsis">
-          {title}
+          {conversationDisplayName}
         </Typography>
       </Stack>
       <Stack direction="row" spacing="20px">
@@ -100,11 +68,6 @@ const ConversationHeader = () => {
       </Stack>
     </Stack>
   );
-};
-
-const getMemberName = (member: ConversationMember) => {
-  const contact = member.contact;
-  return contact.getDisplayName();
 };
 
 export default ConversationView;

@@ -16,7 +16,7 @@
  * <https://www.gnu.org/licenses/>.
  */
 import { Box, ListItem, ListItemAvatar, ListItemText } from '@mui/material';
-import { ContactDetails } from 'jami-web-common';
+import { IConversationSummary } from 'jami-web-common';
 import { QRCodeCanvas } from 'qrcode.react';
 import { useCallback, useContext, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -25,62 +25,42 @@ import { useNavigate } from 'react-router-dom';
 import { useAuthContext } from '../contexts/AuthProvider';
 import { CallManagerContext } from '../contexts/CallManagerProvider';
 import { CallStatus, useCallContext } from '../contexts/CallProvider';
-import { useConversationContext } from '../contexts/ConversationProvider';
-import { MessengerContext } from '../contexts/MessengerProvider';
-import { Conversation } from '../models/conversation';
+import { useUrlParams } from '../hooks/useUrlParams';
 import { setRefreshFromSlice } from '../redux/appSlice';
 import { useAppDispatch } from '../redux/hooks';
+import { ConversationRouteParams } from '../router';
 import ContextMenu, { ContextMenuHandler, useContextMenuHandler } from './ContextMenu';
 import ConversationAvatar from './ConversationAvatar';
 import { ConfirmationDialog, DialogContentList, InfosDialog, useDialogHandler } from './Dialog';
 import { PopoverListItemData } from './PopoverList';
-import {
-  AudioCallIcon,
-  BlockContactIcon,
-  CancelIcon,
-  ContactDetailsIcon,
-  MessageIcon,
-  RemoveContactIcon,
-  VideoCallIcon,
-} from './SvgIcon';
+import { AudioCallIcon, CancelIcon, MessageIcon, PersonIcon, VideoCallIcon } from './SvgIcon';
 
 type ConversationListItemProps = {
-  conversation: Conversation;
+  conversationSummary: IConversationSummary;
 };
 
-export default function ConversationListItem({ conversation }: ConversationListItemProps) {
-  const conversationContext = useConversationContext(true);
-  const conversationId = conversationContext?.conversationId;
+export default function ConversationListItem({ conversationSummary }: ConversationListItemProps) {
+  const {
+    urlParams: { conversationId: selectedConversationId },
+  } = useUrlParams<ConversationRouteParams>();
   const contextMenuHandler = useContextMenuHandler();
-  const { newContactId, setNewContactId } = useContext(MessengerContext);
   const callContext = useCallContext(true);
   const { callData } = useContext(CallManagerContext);
   const { t } = useTranslation();
-
-  const pathId = conversationId ?? newContactId;
-  const isSelected = conversation.getDisplayUri() === pathId;
-
   const navigate = useNavigate();
-  const userId = conversation?.getFirstMember()?.contact.uri;
+
+  const conversationId = conversationSummary.id;
+  const isSelected = conversationId === selectedConversationId;
 
   const onClick = useCallback(() => {
-    const newConversationId = conversation.id;
-    if (newConversationId) {
-      navigate(`/conversation/${newConversationId}`);
-    } else {
-      setNewContactId(userId);
+    if (conversationId) {
+      navigate(`/conversation/${conversationId}`);
     }
-  }, [navigate, conversation, userId, setNewContactId]);
+  }, [navigate, conversationId]);
 
-  const getSecondaryText = () => {
-    const propsConversationId = conversation.id;
-
-    if (!propsConversationId) {
-      return '';
-    }
-
-    if (!callContext || !callData || callData.conversationId !== propsConversationId) {
-      return conversation.getDisplayUri();
+  const secondaryText = useMemo(() => {
+    if (!callContext || !callData || callData.conversationId !== conversationSummary.id) {
+      return conversationSummary.lastMessage.body;
     }
 
     if (callContext.callStatus === CallStatus.InCall) {
@@ -92,66 +72,55 @@ export default function ConversationListItem({ conversation }: ConversationListI
     }
 
     return callContext.callRole === 'caller' ? t('outgoing_call') : t('incoming_call');
-  };
+  }, [conversationSummary, callContext, callData, t]);
+
+  const conversationName = useMemo(
+    () => conversationSummary.title ?? conversationSummary.membersNames.join(', '),
+    [conversationSummary]
+  );
 
   return (
     <Box onContextMenu={contextMenuHandler.handleAnchorPosition}>
       <ConversationMenu
-        userId={userId}
-        conversation={conversation}
+        conversationId={conversationId}
+        conversationName={conversationName}
         onMessageClick={onClick}
         isSelected={isSelected}
         contextMenuProps={contextMenuHandler.props}
       />
       <ListItem button alignItems="flex-start" selected={isSelected} onClick={onClick}>
         <ListItemAvatar>
-          <ConversationAvatar displayName={conversation.getDisplayNameNoFallback()} />
+          <ConversationAvatar displayName={conversationName} />
         </ListItemAvatar>
-        <ListItemText primary={conversation.getDisplayName()} secondary={getSecondaryText()} />
+        <ListItemText primary={conversationName} secondary={secondaryText} />
       </ListItem>
     </Box>
   );
 }
 
 interface ConversationMenuProps {
-  userId: string;
-  conversation: Conversation;
+  conversationId: string;
+  conversationName: string;
   onMessageClick: () => void;
   isSelected: boolean;
   contextMenuProps: ContextMenuHandler['props'];
 }
 
 const ConversationMenu = ({
-  userId,
-  conversation,
+  conversationId,
+  conversationName,
   onMessageClick,
   isSelected,
   contextMenuProps,
 }: ConversationMenuProps) => {
   const { t } = useTranslation();
-  const { axiosInstance } = useAuthContext();
   const { startCall } = useContext(CallManagerContext);
   const [isSwarm] = useState(true);
 
   const detailsDialogHandler = useDialogHandler();
-  const blockContactDialogHandler = useDialogHandler();
-  const removeContactDialogHandler = useDialogHandler();
+  const RemoveConversationDialogHandler = useDialogHandler();
 
   const navigate = useNavigate();
-
-  const getContactDetails = useCallback(async () => {
-    const controller = new AbortController();
-    try {
-      const { data } = await axiosInstance.get<ContactDetails>(`/contacts/${userId}`, {
-        signal: controller.signal,
-      });
-      console.log('CONTACT LIST - DETAILS: ', data);
-    } catch (e) {
-      console.log('ERROR GET CONTACT DETAILS: ', e);
-    }
-  }, [axiosInstance, userId]);
-
-  const conversationId = conversation.id;
 
   const menuOptions: PopoverListItemData[] = useMemo(
     () => [
@@ -198,24 +167,16 @@ const ConversationMenu = ({
         : []),
       {
         label: t('conversation_details'),
-        Icon: ContactDetailsIcon,
+        Icon: PersonIcon,
         onClick: () => {
           detailsDialogHandler.openDialog();
-          getContactDetails();
-        },
-      },
-      {
-        label: t('conversation_block'),
-        Icon: BlockContactIcon,
-        onClick: () => {
-          blockContactDialogHandler.openDialog();
         },
       },
       {
         label: t('conversation_delete'),
-        Icon: RemoveContactIcon,
+        Icon: CancelIcon,
         onClick: () => {
-          removeContactDialogHandler.openDialog();
+          RemoveConversationDialogHandler.openDialog();
         },
       },
     ],
@@ -223,10 +184,8 @@ const ConversationMenu = ({
       navigate,
       onMessageClick,
       isSelected,
-      getContactDetails,
       detailsDialogHandler,
-      blockContactDialogHandler,
-      removeContactDialogHandler,
+      RemoveConversationDialogHandler,
       t,
       startCall,
       conversationId,
@@ -237,108 +196,67 @@ const ConversationMenu = ({
     <>
       <ContextMenu {...contextMenuProps} items={menuOptions} />
 
-      <DetailsDialog {...detailsDialogHandler.props} userId={userId} conversation={conversation} isSwarm={isSwarm} />
+      <DetailsDialog
+        {...detailsDialogHandler.props}
+        conversationId={conversationId}
+        conversationName={conversationName}
+        isSwarm={isSwarm}
+      />
 
-      <RemoveContactDialog {...removeContactDialogHandler.props} userId={userId} conversation={conversation} />
-
-      <BlockContactDialog {...blockContactDialogHandler.props} userId={userId} conversation={conversation} />
+      <RemoveConversationDialog {...RemoveConversationDialogHandler.props} conversationId={conversationId} />
     </>
   );
 };
 
 interface DetailsDialogProps {
-  userId: string;
-  conversation: Conversation;
+  conversationId: string;
+  conversationName: string;
   open: boolean;
   onClose: () => void;
   isSwarm: boolean;
 }
 
-const DetailsDialog = ({ userId, conversation, open, onClose, isSwarm }: DetailsDialogProps) => {
+const DetailsDialog = ({ conversationId, conversationName, open, onClose, isSwarm }: DetailsDialogProps) => {
   const { t } = useTranslation();
   const items = useMemo(
     () => [
       {
-        label: t('conversation_details_username'),
-        value: conversation.getDisplayNameNoFallback(),
+        label: t('conversation_details_name'),
+        value: conversationName,
       },
       {
         label: t('conversation_details_identifier'),
-        value: userId,
+        value: conversationId,
       },
       {
         label: t('conversation_details_qr_code'),
-        value: <QRCodeCanvas size={80} value={`${userId}`} />,
+        value: <QRCodeCanvas size={80} value={`${conversationId}`} />,
       },
       {
         label: t('conversation_details_is_swarm'),
         value: isSwarm ? t('conversation_details_is_swarm_true') : t('conversation_details_is_swarm_false'),
       },
     ],
-    [userId, conversation, isSwarm, t]
+    [conversationId, conversationName, isSwarm, t]
   );
   return (
     <InfosDialog
       open={open}
       onClose={onClose}
-      icon={
-        <ConversationAvatar
-          sx={{ width: 'inherit', height: 'inherit' }}
-          displayName={conversation.getDisplayNameNoFallback()}
-        />
-      }
-      title={conversation.getDisplayNameNoFallback() || ''}
+      icon={<ConversationAvatar sx={{ width: 'inherit', height: 'inherit' }} displayName={conversationName} />}
+      title={conversationName}
       content={<DialogContentList title={t('conversation_details_informations')} items={items} />}
     />
   );
 };
 
-interface BlockContactDialogProps {
-  userId: string;
-  conversation: Conversation;
+interface RemoveConversationDialogProps {
+  conversationId: string;
   open: boolean;
   onClose: () => void;
 }
 
-const BlockContactDialog = ({ userId, open, onClose }: BlockContactDialogProps) => {
-  const { axiosInstance } = useAuthContext();
-  const { t } = useTranslation();
-  const dispatch = useAppDispatch();
-
-  const block = async () => {
-    const controller = new AbortController();
-    try {
-      await axiosInstance.post(`/contacts/${userId}/block`, {
-        signal: controller.signal,
-      });
-      dispatch(setRefreshFromSlice());
-    } catch (e) {
-      console.error(`Error $block contact : `, e);
-      dispatch(setRefreshFromSlice());
-    }
-    onClose();
-  };
-
-  return (
-    <ConfirmationDialog
-      open={open}
-      onClose={onClose}
-      title={t('dialog_confirm_title_default')}
-      content={t('conversation_ask_confirm_block')}
-      onConfirm={block}
-      confirmButtonText={t('conversation_confirm_block')}
-    />
-  );
-};
-
-interface RemoveContactDialogProps {
-  userId: string;
-  conversation: Conversation;
-  open: boolean;
-  onClose: () => void;
-}
-
-const RemoveContactDialog = ({ userId, open, onClose }: RemoveContactDialogProps) => {
+const RemoveConversationDialog = ({ conversationId, open, onClose }: RemoveConversationDialogProps) => {
   const { axiosInstance } = useAuthContext();
   const { t } = useTranslation();
   const dispatch = useAppDispatch();
@@ -346,12 +264,12 @@ const RemoveContactDialog = ({ userId, open, onClose }: RemoveContactDialogProps
   const remove = async () => {
     const controller = new AbortController();
     try {
-      await axiosInstance.delete(`/contacts/${userId}`, {
+      await axiosInstance.delete(`/conversations/${conversationId}`, {
         signal: controller.signal,
       });
       dispatch(setRefreshFromSlice());
     } catch (e) {
-      console.error(`Error removing contact : `, e);
+      console.error(`Error removing conversation : `, e);
       dispatch(setRefreshFromSlice());
     }
     onClose();

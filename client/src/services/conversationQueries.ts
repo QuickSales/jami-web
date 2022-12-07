@@ -16,41 +16,59 @@
  * <https://www.gnu.org/licenses/>.
  */
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { IConversation, Message } from 'jami-web-common';
-import { useMemo } from 'react';
+import { ConversationInfos, IConversationMember, IConversationSummary, Message } from 'jami-web-common';
+import { useCallback } from 'react';
 
 import { useAuthContext } from '../contexts/AuthProvider';
-import { Conversation } from '../models/conversation';
+import { ConversationMember } from '../models/conversation-member';
 
-export const useConversationQuery = (conversationId?: string) => {
+export const useConversationInfosQuery = (conversationId?: string) => {
   const { axiosInstance } = useAuthContext();
-  const conversationQuery = useQuery(
-    ['conversation', conversationId],
+  return useQuery(
+    ['conversations', conversationId],
     async () => {
-      const { data } = await axiosInstance.get<IConversation>(`/conversations/${conversationId}`);
+      const { data } = await axiosInstance.get<ConversationInfos>(`/conversations/${conversationId}/infos`);
       return data;
     },
     {
       enabled: !!conversationId,
     }
   );
+};
 
-  const conversation = useMemo(() => {
-    if (conversationQuery.isSuccess) {
-      return Conversation.fromInterface(conversationQuery.data);
+export const useConversationsSummariesQuery = () => {
+  const { axiosInstance } = useAuthContext();
+  return useQuery(['conversations', 'summaries'], async () => {
+    const { data } = await axiosInstance.get<IConversationSummary[]>(`/conversations`);
+    return data;
+  });
+};
+
+export const useRefreshConversationsSummaries = () => {
+  const queryClient = useQueryClient();
+  return useCallback(() => {
+    queryClient.invalidateQueries(['conversations', 'summaries']);
+  }, [queryClient]);
+};
+
+export const useMembersQuery = (conversationId?: string) => {
+  const { axiosInstance } = useAuthContext();
+  return useQuery(
+    ['conversations', conversationId, 'members'],
+    async () => {
+      const { data } = await axiosInstance.get<IConversationMember[]>(`/conversations/${conversationId}/members`);
+      return data.map((item) => ConversationMember.fromInterface(item));
+    },
+    {
+      enabled: !!conversationId,
     }
-  }, [conversationQuery.isSuccess, conversationQuery.data]);
-
-  return {
-    conversation,
-    ...conversationQuery,
-  };
+  );
 };
 
 export const useMessagesQuery = (conversationId: string) => {
   const { axiosInstance } = useAuthContext();
   return useQuery(
-    ['messages', conversationId],
+    ['conversations', conversationId, 'messages'],
     async () => {
       const { data } = await axiosInstance.get<Message[]>(`/conversations/${conversationId}/messages`);
       return data;

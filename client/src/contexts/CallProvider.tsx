@@ -19,7 +19,7 @@ import { CallAction, CallBegin, WebSocketMessageType } from 'jami-web-common';
 import { useCallback, useContext, useEffect, useMemo, useState } from 'react';
 
 import { createOptionalContext } from '../hooks/createOptionalContext';
-import { Conversation } from '../models/conversation';
+import { ConversationMember } from '../models/conversation-member';
 import { callTimeoutMs } from '../utils/constants';
 import { AsyncSetState, SetState, WithChildren } from '../utils/utils';
 import { CallData, CallManagerContext } from './CallManagerProvider';
@@ -75,19 +75,19 @@ export const useCallContext = optionalCallContext.useOptionalContext;
 
 export default ({ children }: WithChildren) => {
   const webSocket = useContext(WebSocketContext);
-  const { callConversation, callData, exitCall } = useContext(CallManagerContext);
+  const { callMembers, callData, exitCall } = useContext(CallManagerContext);
   const webRtcContext = useWebRtcContext(true);
 
   const dependencies = useMemo(
     () => ({
       webSocket,
       webRtcContext,
-      callConversation,
+      callMembers,
       callData,
       exitCall,
       conversationId: callData?.conversationId,
     }),
-    [webSocket, webRtcContext, callConversation, callData, exitCall]
+    [webSocket, webRtcContext, callMembers, callData, exitCall]
   );
 
   return (
@@ -104,7 +104,7 @@ export default ({ children }: WithChildren) => {
 
 const CallProvider = ({
   webRtcContext,
-  callConversation,
+  callMembers,
   callData,
   exitCall,
   conversationId,
@@ -112,7 +112,7 @@ const CallProvider = ({
 }: {
   webSocket: IWebSocketContext;
   webRtcContext: IWebRtcContext;
-  callConversation: Conversation;
+  callMembers: ConversationMember[];
   callData: CallData;
   exitCall: () => void;
   conversationId: string;
@@ -147,7 +147,7 @@ const CallProvider = ({
   // TODO: This logic will have to change to support multiple people in a call. Could we move this logic to the server?
   //       The client could make a single request with the conversationId, and the server would be tasked with sending
   //       all the individual requests to the members of the conversation.
-  const contactUri = useMemo(() => callConversation.getFirstMember().contact.uri, [callConversation]);
+  const contactUri = useMemo(() => callMembers[0].contact.uri, [callMembers]);
 
   useEffect(() => {
     if (callStatus !== CallStatus.InCall) {

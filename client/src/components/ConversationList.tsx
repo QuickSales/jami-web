@@ -19,23 +19,19 @@ import { GroupRounded as GroupIcon } from '@mui/icons-material';
 import List from '@mui/material/List';
 import ListSubheader from '@mui/material/ListSubheader';
 import Typography from '@mui/material/Typography';
-import { useContext, useEffect } from 'react';
+import { useContext } from 'react';
 
 import { MessengerContext } from '../contexts/MessengerProvider';
-import { Conversation } from '../models/conversation';
-import { useAppSelector } from '../redux/hooks';
+import ContactSearchResultList from './ContactSearchResultList';
 import ConversationListItem from './ConversationListItem';
+import LoadingPage from './Loading';
 
-type ConversationListProps = {
-  conversations: Conversation[];
-};
-export default function ConversationList({ conversations }: ConversationListProps) {
-  const { searchResult } = useContext(MessengerContext);
-  const { refresh } = useAppSelector((state) => state.userInfo);
+export default function ConversationList() {
+  const { searchResult, conversationsSummaries } = useContext(MessengerContext);
 
-  useEffect(() => {
-    console.log('refresh list');
-  }, [refresh]);
+  if (!conversationsSummaries) {
+    return <LoadingPage />;
+  }
 
   return (
     <div className="rooms-list">
@@ -43,14 +39,14 @@ export default function ConversationList({ conversations }: ConversationListProp
         {searchResult && (
           <div>
             <ListSubheader>Public directory</ListSubheader>
-            <ConversationListItem conversation={searchResult} />
+            <ContactSearchResultList contacts={searchResult} />
             <ListSubheader>Conversations</ListSubheader>
           </div>
         )}
-        {conversations.map((conversation) => (
-          <ConversationListItem key={conversation.id} conversation={conversation} />
+        {conversationsSummaries.map((conversationSummary) => (
+          <ConversationListItem key={conversationSummary.id} conversationSummary={conversationSummary} />
         ))}
-        {conversations.length === 0 && (
+        {conversationsSummaries.length === 0 && (
           <div className="list-placeholder">
             <GroupIcon color="disabled" fontSize="large" />
             <Typography className="subtitle" variant="subtitle2">

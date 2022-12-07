@@ -17,13 +17,6 @@
  */
 import { IContact } from './contact';
 
-export interface IConversation {
-  id: string;
-  members: IConversationMember[];
-  messages: Message[];
-  infos: ConversationInfos;
-}
-
 export interface IConversationMember {
   role?: ConversationMemberRole;
   contact: IContact;
@@ -53,6 +46,8 @@ export interface Message {
 }
 
 export interface ConversationInfos {
+  avatar?: string;
+  description?: string;
   mode?: string;
   title?: string;
 }
@@ -63,4 +58,12 @@ export interface NewConversationRequestBody {
 
 export interface NewMessageRequestBody {
   message: string;
+}
+
+export interface IConversationSummary {
+  id: string;
+  avatar: ConversationInfos['avatar'];
+  title: ConversationInfos['title'];
+  membersNames: string[];
+  lastMessage: Message;
 }

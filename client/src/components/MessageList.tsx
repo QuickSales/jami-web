@@ -23,17 +23,17 @@ import { useTranslation } from 'react-i18next';
 import { Waypoint } from 'react-waypoint';
 
 import { useAuthContext } from '../contexts/AuthProvider';
-import { ConversationMember } from '../models/conversation';
+import { useConversationContext } from '../contexts/ConversationProvider';
 import { MessageRow } from './Message';
 import { ArrowDownIcon } from './SvgIcon';
 
 interface MessageListProps {
-  members: ConversationMember[];
   messages: Message[];
 }
 
-export default function MessageList({ members, messages }: MessageListProps) {
+export default function MessageList({ messages }: MessageListProps) {
   const { account } = useAuthContext();
+  const { members } = useConversationContext();
   const [showScrollButton, setShowScrollButton] = useState(false);
   const listBottomRef = useRef<HTMLElement>();
 

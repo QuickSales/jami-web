@@ -20,7 +20,7 @@ import { WebRtcIceCandidate, WebRtcSdp, WebSocketMessageType } from 'jami-web-co
 import { useCallback, useContext, useEffect, useMemo, useState } from 'react';
 
 import { createOptionalContext } from '../hooks/createOptionalContext';
-import { Conversation } from '../models/conversation';
+import { ConversationMember } from '../models/conversation-member';
 import { WithChildren } from '../utils/utils';
 import { useAuthContext } from './AuthProvider';
 import { CallManagerContext } from './CallManagerProvider';
@@ -52,7 +52,7 @@ export default ({ children }: WithChildren) => {
   const { account } = useAuthContext();
   const [webRtcConnection, setWebRtcConnection] = useState<RTCPeerConnection | undefined>();
   const webSocket = useContext(WebSocketContext);
-  const { callConversation, callData } = useContext(CallManagerContext);
+  const { callConversationInfos, callMembers, callData } = useContext(CallManagerContext);
 
   useEffect(() => {
     if (webRtcConnection && !callData) {
@@ -85,10 +85,11 @@ export default ({ children }: WithChildren) => {
     () => ({
       webRtcConnection,
       webSocket,
-      conversation: callConversation,
+      conversationInfos: callConversationInfos,
+      members: callMembers,
       conversationId: callData?.conversationId,
     }),
-    [webRtcConnection, webSocket, callConversation, callData?.conversationId]
+    [webRtcConnection, webSocket, callConversationInfos, callMembers, callData?.conversationId]
   );
 
   return (
@@ -104,14 +105,14 @@ export default ({ children }: WithChildren) => {
 };
 
 const useWebRtcContextValue = ({
-  conversation,
+  members,
   conversationId,
   webRtcConnection,
   webSocket,
 }: {
   webRtcConnection: RTCPeerConnection;
   webSocket: IWebSocketContext;
-  conversation: Conversation;
+  members: ConversationMember[];
   conversationId: string;
 }) => {
   const [localStream, setLocalStream] = useState<MediaStream>();
@@ -133,7 +134,7 @@ const useWebRtcContextValue = ({
   const [iceCandidateQueue, setIceCandidateQueue] = useState<RTCIceCandidate[]>([]);
 
   // TODO: This logic will have to change to support multiple people in a call
-  const contactUri = useMemo(() => conversation.getFirstMember().contact.uri, [conversation]);
+  const contactUri = useMemo(() => members[0]?.contact.uri, [members]);
 
   const getMediaDevices = useCallback(async (): Promise<MediaDevicesInfo> => {
     try {

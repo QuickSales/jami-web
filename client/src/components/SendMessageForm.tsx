@@ -21,7 +21,8 @@ import { ChangeEvent, FormEvent, useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { useAuthContext } from '../contexts/AuthProvider';
-import { ConversationMember } from '../models/conversation';
+import { useConversationContext } from '../contexts/ConversationProvider';
+import { ConversationMember } from '../models/conversation-member';
 import { translateEnumeration, TranslateEnumerationOptions } from '../utils/translations';
 import {
   RecordVideoMessageButton,
@@ -32,12 +33,12 @@ import {
 } from './Button';
 
 type SendMessageFormProps = {
-  members: ConversationMember[];
   onSend: (message: string) => void;
   openFilePicker: () => void;
 };
 
-export default function SendMessageForm({ members, onSend, openFilePicker }: SendMessageFormProps) {
+export default function SendMessageForm({ onSend, openFilePicker }: SendMessageFormProps) {
+  const { members } = useConversationContext();
   const [currentMessage, setCurrentMessage] = useState('');
   const placeholder = usePlaceholder(members);
 
@@ -97,7 +98,7 @@ const usePlaceholder = (members: ConversationMember[]) => {
   return useMemo(() => {
     const options: TranslateEnumerationOptions<ConversationMember> = {
       elementPartialKey: 'member',
-      getElementValue: (member) => getMemberName(member),
+      getElementValue: (member) => member.getDisplayName(),
       translaters: [
         () =>
           // The user is chatting with themself
@@ -112,9 +113,4 @@ const usePlaceholder = (members: ConversationMember[]) => {
 
     return translateEnumeration<ConversationMember>(members, options);
   }, [account, members, t]);
-};
-
-const getMemberName = (member: ConversationMember) => {
-  const contact = member.contact;
-  return contact.getDisplayName();
 };

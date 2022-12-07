@@ -16,32 +16,14 @@
  * <https://www.gnu.org/licenses/>.
  */
 import { Card, CardActionArea, CardContent, CircularProgress, Typography } from '@mui/material';
-import { IConversation } from 'jami-web-common';
-import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router';
 
-import { useAuthContext } from '../contexts/AuthProvider';
+import { useConversationsSummariesQuery } from '../services/conversationQueries';
 
 export default function ConversationsOverviewCard() {
-  const { axiosInstance, account } = useAuthContext();
   const navigate = useNavigate();
 
-  const [conversationCount, setConversationCount] = useState<number | undefined>();
-
-  const accountId = account.id;
-
-  useEffect(() => {
-    const controller = new AbortController();
-    axiosInstance
-      .get<IConversation[]>('/conversations', {
-        signal: controller.signal,
-      })
-      .then(({ data }) => {
-        console.log(data);
-        setConversationCount(data.length);
-      });
-    return () => controller.abort(); // crash on React18
-  }, [axiosInstance, accountId]);
+  const conversationSummariesQuery = useConversationsSummariesQuery();
 
   return (
     <Card onClick={() => navigate(`/`)}>
@@ -51,7 +33,7 @@ export default function ConversationsOverviewCard() {
             Conversations
           </Typography>
           <Typography gutterBottom variant="h5" component="h2">
-            {conversationCount != null ? conversationCount : <CircularProgress size={24} />}
+            {conversationSummariesQuery?.data?.length ?? <CircularProgress size={24} />}
           </Typography>
         </CardContent>
       </CardActionArea>

@@ -345,14 +345,23 @@ export class Jamid {
     ) as unknown as ConversationMemberInfos[];
   }
 
-  async getConversationMessages(accountId: string, conversationId: string, fromMessage?: string): Promise<Message[]> {
-    const requestId = this.jamiSwig.loadConversationMessages(accountId, conversationId, fromMessage || '', 32);
+  async getConversationMessages(
+    accountId: string,
+    conversationId: string,
+    fromMessage = '',
+    n = 32
+  ): Promise<Message[]> {
+    const requestId = this.jamiSwig.loadConversationMessages(accountId, conversationId, fromMessage, n);
     return firstValueFrom(
       this.events.onConversationLoaded.pipe(
         filter((value) => value.id === requestId),
         map((value) => value.messages)
       )
     );
+  }
+
+  removeConversation(accountId: string, conversationId: string) {
+    this.jamiSwig.removeConversation(accountId, conversationId);
   }
 
   sendConversationMessage(

@@ -15,26 +15,27 @@
  * License along with this program.  If not, see
  * <https://www.gnu.org/licenses/>.
  */
-import { Box, Stack } from '@mui/material';
-import { ReactNode } from 'react';
+import { ConversationMemberRole, IConversationMember } from 'jami-web-common';
 
-import ConversationList from '../components/ConversationList';
-import Header from '../components/Header';
-import NewContactForm from '../components/NewContactForm';
+import { Contact } from './contact';
 
-const Messenger = ({ children }: { children?: ReactNode }) => {
-  return (
-    <Box display="flex" height="100%">
-      <Stack flexGrow={0} flexShrink={0} overflow="auto">
-        <Header />
-        <NewContactForm />
-        <ConversationList />
-      </Stack>
-      <Box flexGrow={1} display="flex" position="relative">
-        {children}
-      </Box>
-    </Box>
-  );
-};
+export class ConversationMember implements IConversationMember {
+  readonly role;
+  readonly contact;
 
-export default Messenger;
+  constructor(role: ConversationMemberRole | undefined, contact: Contact) {
+    this.role = role;
+    this.contact = contact;
+  }
+
+  static fromInterface(conversationMemberIterface: IConversationMember) {
+    return new ConversationMember(
+      conversationMemberIterface.role,
+      Contact.fromInterface(conversationMemberIterface.contact)
+    );
+  }
+
+  getDisplayName = () => {
+    return this.contact.getDisplayName();
+  };
+}

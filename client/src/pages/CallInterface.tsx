@@ -170,9 +170,8 @@ const formatElapsedSeconds = (elapsedSeconds: number): string => {
 
 const CallInterfaceInformation = () => {
   const { callStartTime } = useCallContext();
-  const { conversation } = useConversationContext();
+  const { conversationDisplayName } = useConversationContext();
   const [elapsedTime, setElapsedTime] = useState(callStartTime ? (Date.now() - callStartTime) / 1000 : 0);
-  const memberName = useMemo(() => conversation.getFirstMember().contact.registeredName, [conversation]);
 
   useEffect(() => {
     if (callStartTime) {
@@ -188,7 +187,7 @@ const CallInterfaceInformation = () => {
   return (
     <Stack direction="row" justifyContent="space-between" alignItems="center">
       <Typography color="white" component="p">
-        {memberName}
+        {conversationDisplayName}
       </Typography>
       <Typography color="white" component="p">
         {elapsedTimerString}

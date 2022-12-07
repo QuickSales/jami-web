@@ -223,28 +223,6 @@ export const CheckedIcon = (props: SvgIconProps) => {
   );
 };
 
-export const ContactDetailsIcon = (props: SvgIconProps) => {
-  return (
-    <SvgIcon {...props} viewBox="0 0 14.647 16">
-      {/* <svg
-        xmlns="http://www.w3.org/2000/svg"
-        width="14.647"
-        height="16"
-        viewBox="0 0 14.647 16"
-      >
-        <defs>
-          <style>.a{"fill:#005699;"}</style>
-        </defs> */}
-      <path
-        className="a"
-        d="M11.258,9.562A3.774,3.774,0,0,0,13.965,5.9,3.79,3.79,0,0,0,10.144,2,3.871,3.871,0,0,0,8.95,9.562,7.806,7.806,0,0,0,2.9,17.443a.557.557,0,1,0,1.114,0c0-3.821,2.786-6.925,6.209-6.925s6.209,3.1,6.209,6.925a.557.557,0,0,0,1.114,0C17.388,13.463,14.681,10.119,11.258,9.562ZM7.278,5.9a2.866,2.866,0,1,1,5.731,0,2.787,2.787,0,0,1-2.866,2.786A2.838,2.838,0,0,1,7.278,5.9Z"
-        transform="translate(-2.9 -2)"
-      />
-      {/* </svg> */}
-    </SvgIcon>
-  );
-};
-
 export const CrossedEyeIcon = (props: SvgIconProps) => {
   return (
     <SvgIcon {...props} viewBox="0 0 15.931 12.145">
@@ -544,10 +522,8 @@ export const PeopleWithPlusSignIcon = (props: SvgIconProps) => {
 
 export const PersonIcon = (props: SvgIconProps) => {
   return (
-    <SvgIcon {...props} viewBox="0 0 24 24">
-      <g stroke="#03B9E9" strokeWidth="1.75" fill="none" fillRule="evenodd" strokeLinejoin="round">
-        <path d="M17 6.5c0 2.48522308-2.0147769 4.5-4.5 4.5C10.01477692 11 8 8.98522308 8 6.5 8 4.0147769 10.01477692 2 12.5 2 14.9852231 2 17 4.0147769 17 6.5ZM3 22c0-5.5228267 4.02947764-10 9.00005436-10C16.9705224 12 21 16.4771733 21 22" />
-      </g>
+    <SvgIcon {...props} viewBox="8.8 2 3 16">
+      <path d="M11.258,9.562A3.774,3.774,0,0,0,13.965,5.9,3.79,3.79,0,0,0,10.144,2,3.871,3.871,0,0,0,8.95,9.562,7.806,7.806,0,0,0,2.9,17.443a.557.557,0,1,0,1.114,0c0-3.821,2.786-6.925,6.209-6.925s6.209,3.1,6.209,6.925a.557.557,0,0,0,1.114,0C17.388,13.463,14.681,10.119,11.258,9.562ZM7.278,5.9a2.866,2.866,0,1,1,5.731,0,2.787,2.787,0,0,1-2.866,2.786A2.838,2.838,0,0,1,7.278,5.9Z" />
     </SvgIcon>
   );
 };
@@ -576,31 +552,6 @@ export const RecordingIcon = (props: SvgIconProps) => {
         d="M12,2C6.5,2,2,6.5,2,12s4.5,10,10,10s10-4.5,10-10S17.5,2,12,2z M12,20.3c-4.6,0-8.3-3.7-8.3-8.3S7.4,3.7,12,3.7
 	s8.3,3.7,8.3,8.3S16.6,20.3,12,20.3z"
       />
-    </SvgIcon>
-  );
-};
-
-export const RemoveContactIcon = (props: SvgIconProps) => {
-  return (
-    <SvgIcon {...props} viewBox="0 0 16 16">
-      {/* <svg
-        xmlns="http://www.w3.org/2000/svg"
-        width="16"
-        height="16"
-        viewBox="0 0 16 16"
-      >
-        <defs>
-          <style>.a{"fill:#005699;"}</style>
-        </defs> */}
-      <g transform="translate(-2 -2)">
-        <g transform="translate(2 2)">
-          <path
-            className="a"
-            d="M8,0a8,8,0,1,0,8,8A8.024,8.024,0,0,0,8,0ZM8,1.04a6.5,6.5,0,0,1,4.48,1.68L2.72,12.48A6.9,6.9,0,0,1,1.68,5.12,7.081,7.081,0,0,1,8,1.04ZM8,14.96a7.274,7.274,0,0,1-4.56-1.68l9.84-9.76a6.9,6.9,0,0,1,1.04,7.36A7.032,7.032,0,0,1,8,14.96Z"
-          />
-        </g>
-      </g>
-      {/* </svg> */}
     </SvgIcon>
   );
 };
